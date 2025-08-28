@@ -120,7 +120,7 @@ func getMonarchsHandler(w http.ResponseWriter, r *http.Request) {
 // helloHandler is the function that will be executed for requests to the "/" route.
 func helloHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, "This is the server for the student records app. It's written in Go (aka GoLang).")
+	fmt.Fprint(w, "This is the server for the monarch butterflies app. It's written in Go (aka GoLang).")
 }
 
 
