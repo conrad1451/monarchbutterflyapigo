@@ -127,7 +127,7 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 // faviconHandler serves the favicon.ico file.
 func faviconHandler(w http.ResponseWriter, r *http.Request) {
     // Open the favicon file
-    favicon, err := os.ReadFile("./static/calculator.ico")
+    favicon, err := os.ReadFile("./static/butterfly_net.ico")
     if err != nil {
         http.NotFound(w, r)
         return
