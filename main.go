@@ -11,6 +11,8 @@ import (
 	"os"
 
 	// The `pq` package is a pure Go PostgreSQL driver for `database/sql`.
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
@@ -114,11 +116,57 @@ func getMonarchsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 
+// CHQ: Gemini AI generated function
+// helloHandler is the function that will be executed for requests to the "/" route.
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprint(w, "This is the server for the student records app. It's written in Go (aka GoLang).")
+}
+
+
+// faviconHandler serves the favicon.ico file.
+func faviconHandler(w http.ResponseWriter, r *http.Request) {
+    // Open the favicon file
+    favicon, err := os.ReadFile("./static/calculator.ico")
+    if err != nil {
+        http.NotFound(w, r)
+        return
+    }
+
+    // Set the Content-Type header
+    w.Header().Set("Content-Type", "image/x-icon")
+    
+    // Write the file content to the response
+    w.Write(favicon)
+}
+
 func main() {
 	// Set up the HTTP router.
-	http.HandleFunc("/api/monarchs", getMonarchsHandler)
+		// Initialize the router
+	router := mux.NewRouter()
 
-	// Start the server on port 5000.
-	fmt.Println("Server is running on port 5000...")
-	log.Fatal(http.ListenAndServe(":5000", nil))
+	router.HandleFunc("/", helloHandler)
+	router.HandleFunc("/favicon.ico", faviconHandler)
+
+	router.HandleFunc("/api/monarchs", getMonarchsHandler)
+	// router.HandleFunc("/api/monarchs", getMonarchsHandler)
+
+	
+	// --- CORS Setup ---
+	allowedOrigins := handlers.AllowedOrigins([]string{"*"})
+	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
+	corsRouter := handlers.CORS(allowedOrigins, allowedMethods, allowedHeaders)(router)
+
+	// // Start the server on port 5000.
+	// fmt.Println("Server is running on port 5000...")
+	// log.Fatal(http.ListenAndServe(":5000", nil))
+	
+	// Start the HTTP server
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // Default port
+	}
+	fmt.Printf("Server listening on port %s...\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, corsRouter))
 }
