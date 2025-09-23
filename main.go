@@ -310,25 +310,9 @@ func getAllMonarchsAsAdmin2(w http.ResponseWriter) {
 
 // CHQ: Gemini AI corrected function
 // Corrected getAllMonarchsAsAdmin to ignore the 'r' parameter
-func getAllMonarchsAsAdmin(w http.ResponseWriter, _ *http.Request) {
-	connStr := os.Getenv("GOOGLE_VM_DOCKER_HOSTED_SQL")
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to connect to database: %v", err), http.StatusInternalServerError)
-		log.Printf("Failed to connect to database: %v", err)
-		return
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Database ping failed: %v", err), http.StatusInternalServerError)
-		log.Printf("Database ping failed: %v", err)
-		return
-	}
-
+func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseWriter, _ *http.Request) {
 	var monarchButterflies []MyMonarchRecord
-	tableName := "june212025"
+	tableName := theTablename
 	// Explicitly listing all 35 columns to match the struct fields.
 	query := fmt.Sprintf(`SELECT "gbifID", "datasetKey", "publishingOrgKey", "eventDate", "eventDateParsed", "year", "month", "day", "day_of_week", "week_of_year", "date_only", "scientificName", "vernacularName", "taxonKey", "kingdom", "phylum", "class", "order", "family", "genus", "species", "decimalLatitude", "decimalLongitude", "coordinateUncertaintyInMeters", "countryCode", "stateProvince", "individualCount", "basisOfRecord", "recordedBy", "occurrenceID", "collectionCode", "catalogNumber", "county", "cityOrTown", "time_only" FROM "%s" ORDER BY "date_only"`, tableName)
 	rows, err := db.Query(query)
@@ -395,6 +379,27 @@ func getAllMonarchsAsAdmin(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(monarchButterflies)
+}
+
+// Corrected getAllMonarchsAsAdmin to ignore the 'r' parameter
+func getAllMonarchsAsAdmin(w http.ResponseWriter, _ *http.Request) {
+	connStr := os.Getenv("GOOGLE_VM_DOCKER_HOSTED_SQL")
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to connect to database: %v", err), http.StatusInternalServerError)
+		log.Printf("Failed to connect to database: %v", err)
+		return
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Database ping failed: %v", err), http.StatusInternalServerError)
+		log.Printf("Database ping failed: %v", err)
+		return
+	}
+
+	getMonarchButterfliesSingleDayAsAdmin("june212025", w, nil)
 }
 
 // getAllgodbstudents handles GET requests to retrieve all student records for the authenticated teacher.
