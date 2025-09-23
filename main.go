@@ -309,8 +309,8 @@ func getAllMonarchsAsAdmin2(w http.ResponseWriter) {
 }
 
 // CHQ: Gemini AI corrected function
-// --- Corrected `getMonarchsAsAdmin` function ---
-func getAllMonarchsAsAdmin(w http.ResponseWriter, r *http.Request) {
+// Corrected getAllMonarchsAsAdmin to ignore the 'r' parameter
+func getAllMonarchsAsAdmin(w http.ResponseWriter, _ *http.Request) {
 	connStr := os.Getenv("GOOGLE_VM_DOCKER_HOSTED_SQL")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -433,9 +433,11 @@ func getAllMonarchsAsAdmin(w http.ResponseWriter, r *http.Request) {
 // 	w.Header().Set("Content-Type", "application/json")
 // 	json.NewEncoder(w).Encode(students)
 // }
-func getAllMonarchs(w http.ResponseWriter, r *http.Request){
+
+// CHQ: Gemini AI corrected parameters to ignore the r
+func getAllMonarchs(w http.ResponseWriter, _ *http.Request) {
 	// if (isAnAdmin) {
-		getAllMonarchsAsAdmin(w)
+    getAllMonarchsAsAdmin(w, nil) // You can pass nil as the request since the function doesn't use it
 	// } else {
 		// getAllMonarchsAsTeacher(w, r)
 	// }
