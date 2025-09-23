@@ -309,8 +309,8 @@ func getAllMonarchsAsAdmin2(w http.ResponseWriter) {
 }
 
 // CHQ: Gemini AI corrected function
-func getAllMonarchsAsAdmin(w http.ResponseWriter) {
-	// CHQ: Gemini AI included the database connection
+// --- Corrected `getMonarchsAsAdmin` function ---
+func getAllMonarchsAsAdmin(w http.ResponseWriter, r *http.Request) {
 	connStr := os.Getenv("GOOGLE_VM_DOCKER_HOSTED_SQL")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -327,79 +327,74 @@ func getAllMonarchsAsAdmin(w http.ResponseWriter) {
 		return
 	}
 
-    var monarchButterflies []MyMonarchRecord
-    
-    // CHQ: Gemini AI Corrected table name
-    tableName := "june212025"
-    query := fmt.Sprintf(`SELECT * FROM "%s"`, tableName) 
-    rows, err := db.Query(query)
+	var monarchButterflies []MyMonarchRecord
+	tableName := "june212025"
+	// Explicitly listing all 35 columns to match the struct fields.
+	query := fmt.Sprintf(`SELECT "gbifID", "datasetKey", "publishingOrgKey", "eventDate", "eventDateParsed", "year", "month", "day", "day_of_week", "week_of_year", "date_only", "scientificName", "vernacularName", "taxonKey", "kingdom", "phylum", "class", "order", "family", "genus", "species", "decimalLatitude", "decimalLongitude", "coordinateUncertaintyInMeters", "countryCode", "stateProvince", "individualCount", "basisOfRecord", "recordedBy", "occurrenceID", "collectionCode", "catalogNumber", "county", "cityOrTown", "time_only" FROM "%s" ORDER BY "date_only"`, tableName)
+	rows, err := db.Query(query)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error retrieving butterflies: %v", err), http.StatusInternalServerError)
+		log.Printf("Query failed: %v", err)
+		return
+	}
+	defer rows.Close()
 
-    if err != nil {
-        http.Error(w, fmt.Sprintf("Error retrieving butterflies: %v", err), http.StatusInternalServerError)
-        return
-    }
-    defer rows.Close()
+	for rows.Next() {
+		var record MyMonarchRecord
+		err := rows.Scan(
+			&record.GBIFID,
+			&record.DatasetKey,
+			&record.PublishingOrgKey,
+			&record.EventDate,
+			&record.EventDateParsed,
+			&record.Year,
+			&record.Month,
+			&record.Day,
+			&record.DayOfWeek,
+			&record.WeekOfYear,
+			&record.DateOnly,
+			&record.ScientificName,
+			&record.VernacularName,
+			&record.TaxonKey,
+			&record.Kingdom,
+			&record.Phylum,
+			&record.Class,
+			&record.Order,
+			&record.Family,
+			&record.Genus,
+			&record.Species,
+			&record.DecimalLatitude,
+			&record.DecimalLongitude,
+			&record.CoordinateUncertaintyInMeters,
+			&record.CountryCode,
+			&record.StateProvince,
+			&record.IndividualCount,
+			&record.BasisOfRecord,
+			&record.RecordedBy,
+			&record.OccurrenceID,
+			&record.CollectionCode,
+			&record.CatalogNumber,
+			&record.County,
+			&record.CityOrTown,
+			&record.TimeOnly,
+		)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to scan row: %v", err), http.StatusInternalServerError)
+			log.Printf("Failed to scan row: %v", err)
+			return
+		}
+		monarchButterflies = append(monarchButterflies, record)
+	}
 
-	// CHQ: Gemini AI corrected rows for scan
-   // 4. Iterate and scan rows
-    for rows.Next() {
-        var record MyMonarchRecord
-        err := rows.Scan(
-            &record.GBIFID,
-            &record.DatasetKey,
-            &record.PublishingOrgKey,
-            &record.EventDate,
-            &record.EventDateParsed,
-            &record.Year,
-            &record.Month,
-            &record.Day,
-            &record.DayOfWeek,
-            &record.WeekOfYear,
-            &record.DateOnly,
-            &record.ScientificName,
-            &record.VernacularName,
-            &record.TaxonKey,
-            &record.Kingdom,
-            &record.Phylum,
-            &record.Class,
-            &record.Order,
-            &record.Family,
-            &record.Genus,
-            &record.Species,
-            &record.DecimalLatitude,
-            &record.DecimalLongitude,
-            &record.CoordinateUncertaintyInMeters,
-            &record.CountryCode,
-            &record.StateProvince,
-            &record.IndividualCount,
-            &record.BasisOfRecord,
-            &record.RecordedBy,
-            &record.OccurrenceID,
-            &record.CollectionCode,
-            &record.CatalogNumber,
-            &record.County,
-            &record.CityOrTown,
-            &record.TimeOnly,
-        )
-        if err != nil {
-            http.Error(w, fmt.Sprintf("Failed to scan row: %v", err), http.StatusInternalServerError)
-            log.Printf("Failed to scan row: %v", err)
-            return
-        }
-        monarchButterflies = append(monarchButterflies, record)
-    }
+	if err = rows.Err(); err != nil {
+		http.Error(w, fmt.Sprintf("Error iterating over monarch butterfly rows: %v", err), http.StatusInternalServerError)
+		log.Printf("Error iterating over rows: %v", err)
+		return
+	}
 
-    // 5. Check for iteration errors
-    if err = rows.Err(); err != nil {
-        http.Error(w, fmt.Sprintf("Error iterating over monarch butterfly rows: %v", err), http.StatusInternalServerError)
-        log.Printf("Error iterating over rows: %v", err)
-        return
-    }
-
-    // 6. Write the JSON response
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(monarchButterflies)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(monarchButterflies)
 }
 
 // getAllgodbstudents handles GET requests to retrieve all student records for the authenticated teacher.
