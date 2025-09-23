@@ -323,59 +323,65 @@ func getAllMonarchsAsAdmin(w http.ResponseWriter) {
     }
     defer rows.Close()
 
+	// CHQ: Gemini AI corrected rows for scan
+   // 4. Iterate and scan rows
     for rows.Next() {
-        var monarchButterfly MyMonarchRecord
-		// CHQ: Gemini AI Corrected rows.Scan to handle all 35 columns in the struct
+        var record MyMonarchRecord
         err := rows.Scan(
-            &monarchButterfly.GBIFID,
-            &monarchButterfly.DatasetKey,
-            &monarchButterfly.PublishingOrgKey,
-            &monarchButterfly.EventDate,
-            &monarchButterfly.EventDateParsed,
-            &monarchButterfly.Year,
-            &monarchButterfly.Month,
-            &monarchButterfly.Day,
-            &monarchButterfly.DayOfWeek,
-            &monarchButterfly.WeekOfYear,
-            &monarchButterfly.DateOnly,
-            &monarchButterfly.ScientificName,
-            &monarchButterfly.VernacularName,
-            &monarchButterfly.TaxonKey,
-            &monarchButterfly.Kingdom,
-            &monarchButterfly.Phylum,
-            &monarchButterfly.Class,
-            &monarchButterfly.Order,
-            &monarchButterfly.Family,
-            &monarchButterfly.Genus,
-            &monarchButterfly.Species,
-            &monarchButterfly.DecimalLatitude,
-            &monarchButterfly.DecimalLongitude,
-            &monarchButterfly.CoordinateUncertaintyInMeters,
-            &monarchButterfly.CountryCode,
-            &monarchButterfly.StateProvince,
-            &monarchButterfly.IndividualCount,
-            &monarchButterfly.BasisOfRecord,
-            &monarchButterfly.RecordedBy,
-            &monarchButterfly.OccurrenceID,
-            &monarchButterfly.CollectionCode,
-            &monarchButterfly.CatalogNumber,
-            &monarchButterfly.County,
-            &monarchButterfly.CityOrTown,
-            &monarchButterfly.TimeOnly,
+            &record.GBIFID,
+            &record.DatasetKey,
+            &record.PublishingOrgKey,
+            &record.EventDate,
+            &record.EventDateParsed,
+            &record.Year,
+            &record.Month,
+            &record.Day,
+            &record.DayOfWeek,
+            &record.WeekOfYear,
+            &record.DateOnly,
+            &record.ScientificName,
+            &record.VernacularName,
+            &record.TaxonKey,
+            &record.Kingdom,
+            &record.Phylum,
+            &record.Class,
+            &record.Order,
+            &record.Family,
+            &record.Genus,
+            &record.Species,
+            &record.DecimalLatitude,
+            &record.DecimalLongitude,
+            &record.CoordinateUncertaintyInMeters,
+            &record.CountryCode,
+            &record.StateProvince,
+            &record.IndividualCount,
+            &record.BasisOfRecord,
+            &record.RecordedBy,
+            &record.OccurrenceID,
+            &record.CollectionCode,
+            &record.CatalogNumber,
+            &record.County,
+            &record.CityOrTown,
+            &record.TimeOnly,
         )
         if err != nil {
-            log.Printf("Error scanning monarch butterfly row: %v", err)
-            continue
+            http.Error(w, fmt.Sprintf("Failed to scan row: %v", err), http.StatusInternalServerError)
+            log.Printf("Failed to scan row: %v", err)
+            return
         }
-        monarchButterflies = append(monarchButterflies, monarchButterfly)
+        monarchButterflies = append(monarchButterflies, record)
     }
 
+    // 5. Check for iteration errors
     if err = rows.Err(); err != nil {
         http.Error(w, fmt.Sprintf("Error iterating over monarch butterfly rows: %v", err), http.StatusInternalServerError)
+        log.Printf("Error iterating over rows: %v", err)
         return
     }
 
+    // 6. Write the JSON response
     w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(monarchButterflies)
 }
 
