@@ -310,6 +310,23 @@ func getAllMonarchsAsAdmin2(w http.ResponseWriter) {
 
 // CHQ: Gemini AI corrected function
 func getAllMonarchsAsAdmin(w http.ResponseWriter) {
+	// CHQ: Gemini AI included the database connection
+	connStr := os.Getenv("GOOGLE_VM_DOCKER_HOSTED_SQL")
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to connect to database: %v", err), http.StatusInternalServerError)
+		log.Printf("Failed to connect to database: %v", err)
+		return
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Database ping failed: %v", err), http.StatusInternalServerError)
+		log.Printf("Database ping failed: %v", err)
+		return
+	}
+
     var monarchButterflies []MyMonarchRecord
     
     // CHQ: Gemini AI Corrected table name
