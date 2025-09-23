@@ -278,7 +278,7 @@ func main() {
 
 
 
-func getAllMonarchsAsAdmin(w http.ResponseWriter) {
+func getAllMonarchsAsAdmin2(w http.ResponseWriter) {
 	var monarchButterflies []MyMonarchRecord
 	query := `SELECT * FROM "2025_M06_JUN_2025_butterflies_CT" ORDER BY "date_only"`
 	rows, err := db.Query(query)
@@ -306,6 +306,77 @@ func getAllMonarchsAsAdmin(w http.ResponseWriter) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(monarchButterflies)
+}
+
+// CHQ: Gemini AI corrected function
+func getAllMonarchsAsAdmin(w http.ResponseWriter) {
+    var monarchButterflies []MyMonarchRecord
+    
+    // CHQ: Gemini AI Corrected table name
+    tableName := "june212025"
+    query := fmt.Sprintf(`SELECT * FROM "%s"`, tableName) 
+    rows, err := db.Query(query)
+
+    if err != nil {
+        http.Error(w, fmt.Sprintf("Error retrieving butterflies: %v", err), http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var monarchButterfly MyMonarchRecord
+		// CHQ: Gemini AI Corrected rows.Scan to handle all 35 columns in the struct
+        err := rows.Scan(
+            &monarchButterfly.GBIFID,
+            &monarchButterfly.DatasetKey,
+            &monarchButterfly.PublishingOrgKey,
+            &monarchButterfly.EventDate,
+            &monarchButterfly.EventDateParsed,
+            &monarchButterfly.Year,
+            &monarchButterfly.Month,
+            &monarchButterfly.Day,
+            &monarchButterfly.DayOfWeek,
+            &monarchButterfly.WeekOfYear,
+            &monarchButterfly.DateOnly,
+            &monarchButterfly.ScientificName,
+            &monarchButterfly.VernacularName,
+            &monarchButterfly.TaxonKey,
+            &monarchButterfly.Kingdom,
+            &monarchButterfly.Phylum,
+            &monarchButterfly.Class,
+            &monarchButterfly.Order,
+            &monarchButterfly.Family,
+            &monarchButterfly.Genus,
+            &monarchButterfly.Species,
+            &monarchButterfly.DecimalLatitude,
+            &monarchButterfly.DecimalLongitude,
+            &monarchButterfly.CoordinateUncertaintyInMeters,
+            &monarchButterfly.CountryCode,
+            &monarchButterfly.StateProvince,
+            &monarchButterfly.IndividualCount,
+            &monarchButterfly.BasisOfRecord,
+            &monarchButterfly.RecordedBy,
+            &monarchButterfly.OccurrenceID,
+            &monarchButterfly.CollectionCode,
+            &monarchButterfly.CatalogNumber,
+            &monarchButterfly.County,
+            &monarchButterfly.CityOrTown,
+            &monarchButterfly.TimeOnly,
+        )
+        if err != nil {
+            log.Printf("Error scanning monarch butterfly row: %v", err)
+            continue
+        }
+        monarchButterflies = append(monarchButterflies, monarchButterfly)
+    }
+
+    if err = rows.Err(); err != nil {
+        http.Error(w, fmt.Sprintf("Error iterating over monarch butterfly rows: %v", err), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(monarchButterflies)
 }
 
 // getAllgodbstudents handles GET requests to retrieve all student records for the authenticated teacher.
