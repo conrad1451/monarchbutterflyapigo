@@ -20,8 +20,14 @@ import (
 	_ "github.com/lib/pq"
 )
 
-    PState    string `json:"p_state"`
-}
+// Define the structure for the request body
+// type ViewCreationRequest struct {
+//     PYear     int    `json:"p_year"`
+//     PMonth    string `json:"p_month"`
+//     PStartDay int    `json:"p_start_day"`
+//     PEndDay   int    `json:"p_end_day"`
+//     PState    string `json:"p_state"`
+// }
 
 // MonarchRecord represents a row from the database table.
 // Using a map[string]interface{} is flexible since the schema
