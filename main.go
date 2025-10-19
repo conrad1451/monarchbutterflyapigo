@@ -319,7 +319,9 @@ func getAllMonarchsAsAdmin2(w http.ResponseWriter, _ *http.Request) {
 
 // CHQ: Gemini AI corrected function
 // Corrected getAllMonarchsAsAdmin to ignore the 'r' parameter
-func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseWriter, r *http.Request) {
+// func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseWriter, r *http.Request) {
+
+func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseWriter, _ *http.Request) {
 	var monarchButterflies []MyMonarchRecord
 	tableName := theTablename
 	// Explicitly listing all 35 columns to match the struct fields.
