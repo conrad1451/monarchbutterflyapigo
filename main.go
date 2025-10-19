@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	// The `pq` package is a pure Go PostgreSQL driver for `database/sql`.
@@ -17,6 +19,9 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
+
+    PState    string `json:"p_state"`
+}
 
 // MonarchRecord represents a row from the database table.
 // Using a map[string]interface{} is flexible since the schema
@@ -249,7 +254,7 @@ func main() {
 	protectedRoutes := router.PathPrefix("/api").Subrouter()
 	// protectedRoutes.Use(sessionValidationMiddleware) // Apply middleware to all routes in this subrouter
 
-	// protectedRoutes.HandleFunc("/monarchsjune2025/{id}", getAllMonarchs).Methods("GET")
+	protectedRoutes.HandleFunc("/monarchbutterlies/dayscan/{calendarDate}", getSingleDayScan).Methods("GET")
 	protectedRoutes.HandleFunc("/monarchsjune2025", getAllMonarchs).Methods("GET")
 
 
@@ -276,9 +281,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, corsRouter))
 }
 
-
-
-func getAllMonarchsAsAdmin2(w http.ResponseWriter) {
+func getAllMonarchsAsAdmin2(w http.ResponseWriter, _ *http.Request) {
 	var monarchButterflies []MyMonarchRecord
 	query := `SELECT * FROM "2025_M06_JUN_2025_butterflies_CT" ORDER BY "date_only"`
 	rows, err := db.Query(query)
@@ -310,7 +313,7 @@ func getAllMonarchsAsAdmin2(w http.ResponseWriter) {
 
 // CHQ: Gemini AI corrected function
 // Corrected getAllMonarchsAsAdmin to ignore the 'r' parameter
-func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseWriter, _ *http.Request) {
+func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseWriter, r *http.Request) {
 	var monarchButterflies []MyMonarchRecord
 	tableName := theTablename
 	// Explicitly listing all 35 columns to match the struct fields.
@@ -399,7 +402,7 @@ func getAllMonarchsAsAdmin(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	getMonarchButterfliesSingleDayAsAdmin("june212025", w, nil)
+	// getMonarchButterfliesSingleDayAsAdmin("june212025", w, nil)
 }
 
 // getAllgodbstudents handles GET requests to retrieve all student records for the authenticated teacher.
@@ -442,8 +445,155 @@ func getAllMonarchsAsAdmin(w http.ResponseWriter, _ *http.Request) {
 // CHQ: Gemini AI corrected parameters to ignore the r
 func getAllMonarchs(w http.ResponseWriter, _ *http.Request) {
 	// if (isAnAdmin) {
-    getAllMonarchsAsAdmin(w, nil) // You can pass nil as the request since the function doesn't use it
+		getAllMonarchsAsAdmin2(w, nil) // You can pass nil as the request since the function doesn't use it
+
+    // getAllMonarchsAsAdmin(w, nil) // You can pass nil as the request since the function doesn't use it
 	// } else {
 		// getAllMonarchsAsTeacher(w, r)
 	// }
 }
+
+func generateTableName(day int, monthInt int, year int) string {
+	// 1. Define the equivalent of my_calendar (a map in Go)
+	// You would typically define this map globally or pass it in,
+	// but defining it here works for a direct conversion.
+
+	monthIntToStr := ""
+
+	if(monthInt < 10){
+		monthIntToStr = ("0" + strconv.Itoa(monthInt))
+	} else {
+		monthIntToStr = strconv.Itoa(monthInt)
+	}
+  
+	myCalendar := map[string]string{
+		"01":   "january",
+		"02":   "february",
+		"03":   "march",
+		"04":   "april",
+		"05":   "may",
+		"06":   "june",
+		"07":   "july",
+		"08":    "august",
+		"09": "september",
+		"10":   "october",
+		"11":  "november",
+		"12":  "december",
+	}
+
+	// Retrieve the month string from the map
+	// monthStr, ok := myCalendar[month]
+	monthStr, ok := myCalendar[monthIntToStr]
+ 
+	if !ok {
+		// Handle case where the month is not found (optional, but good practice)
+		return "Error: Invalid month"
+	}
+
+	// 2. Implement the conditional logic and string concatenation
+	var tableName string
+	yearStr := strconv.Itoa(year) // Convert int year to string
+
+	tableName = fmt.Sprintf("%s%d%s", monthStr, day, yearStr)
+
+	return tableName
+}
+
+func getSingleDayScan(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	// date should be in number form mmddyyyy
+
+	calendarDate, err := strconv.Atoi(vars["calendarDate"])
+	if err != nil {
+		http.Error(w, "Invalid date given", http.StatusBadRequest)
+		return
+	}
+
+	// CHQ: yes I had to cast both values to int64 for the modulo to work
+	hasCorrectNumDigits := (int64(calendarDate) % int64(math.Pow(10, 7))) < 10
+
+	if(!hasCorrectNumDigits) {
+		http.Error(w, "Invalid date given - incorrect number of digits", http.StatusBadRequest)
+		return
+	} else {
+		// peel off the first leading two digits to assign to monthInt
+		monthInt := int64(int64(calendarDate) / int64(math.Pow(10, 6)))
+
+		// this takes an mmddyyyy represented number and removes the leading mm
+		// to produce ddyyyy
+		dayYearPortion := int64(calendarDate) - (monthInt * int64(math.Pow(10, 6)))
+
+		// peel off the next leading two digits to assign to dayInt
+		dayInt := int64(int64(dayYearPortion) / int64(math.Pow(10, 4)))
+
+		// the remaining 4 digits are the year
+		yearInt := int64(int64(dayYearPortion) % int64(math.Pow(10, 4)))
+
+		
+		useVariable := false
+
+		myChoice := generateTableName(int(dayInt), int(monthInt), int(yearInt))
+		
+		if (useVariable){
+			myChoice = "june212025"
+		}  
+		getMonarchButterfliesSingleDayAsAdmin(myChoice, w, nil)
+		// getMonarchButterfliesSingleDayAsAdmin(calendarDate, w, r)
+	}
+}
+
+
+// createDailyViewHandler processes the POST request to create the view
+// func createDailyViewHandler(w http.ResponseWriter, r *http.Request) {
+//     // 1. Only allow POST requests
+//     if r.Method != http.MethodPost {
+//         http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+//         return
+//     }
+
+//     // 2. Decode the JSON request body
+//     var req ViewCreationRequest
+//     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+//         http.Error(w, "Invalid JSON input: "+err.Error(), http.StatusBadRequest)
+//         return
+//     }
+
+//     // 3. Validate required integer fields (string fields will be empty if not provided)
+//     if req.PYear == 0 || req.PStartDay == 0 || req.PEndDay == 0 || req.PMonth == "" || req.PState == "" {
+//         http.Error(w, "Missing one or more required parameters (p_year, p_month, p_start_day, p_end_day, p_state)", http.StatusBadRequest)
+//         return
+//     }
+
+//     // 4. Construct the SQL function call
+//     // Note: The '$1', '$2', etc., notation is for PostgreSQL parameterized queries,
+//     // which prevents SQL injection.
+//     sqlCall := `SELECT create_daily_data_view($1, $2, $3, $4, $5)`
+
+//     // 5. Execute the function
+//     var confirmationMessage string
+//     err := db.QueryRow(
+//         sqlCall, 
+//         req.PYear, 
+//         req.PMonth, 
+//         req.PStartDay, 
+//         req.PEndDay, 
+//         req.PState,
+//     ).Scan(&confirmationMessage)
+
+//     if err != nil {
+//         // If the database function raised an exception (e.g., invalid day range),
+//         // the error will be caught here.
+//         log.Printf("Error executing function: %v", err)
+//         http.Error(w, fmt.Sprintf("Database operation failed: %s", err.Error()), http.StatusInternalServerError)
+//         return
+//     }
+
+//     // 6. Send the success response
+//     w.Header().Set("Content-Type", "application/json")
+//     w.WriteHeader(http.StatusOK)
+//     json.NewEncoder(w).Encode(map[string]string{
+//         "status": "success",
+//         "message": confirmationMessage,
+//     })
+// }
