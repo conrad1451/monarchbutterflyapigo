@@ -257,11 +257,14 @@ func main() {
 	router.HandleFunc("/", helloHandler)
 	router.HandleFunc("/favicon.ico", faviconHandler)
 	// Protected routes (require session validation)
-	protectedRoutes := router.PathPrefix("/api").Subrouter()
+	// protectedRoutes := router.PathPrefix("/api").Subrouter()
 	// protectedRoutes.Use(sessionValidationMiddleware) // Apply middleware to all routes in this subrouter
 
-	protectedRoutes.HandleFunc("/monarchbutterlies/dayscan/{calendarDate}", getSingleDayScan).Methods("GET")
-	protectedRoutes.HandleFunc("/monarchsjune2025", getAllMonarchs).Methods("GET")
+	// protectedRoutes.HandleFunc("/monarchbutterlies/dayscan/{calendarDate}", getSingleDayScan).Methods("GET")
+	// protectedRoutes.HandleFunc("/monarchsjune2025", getAllMonarchs).Methods("GET")
+
+	router.HandleFunc("/monarchbutterlies/dayscan/{calendarDate}", getSingleDayScan).Methods("GET")
+	router.HandleFunc("/monarchsjune2025", getAllMonarchs).Methods("GET")
 
 
 	// router.HandleFunc("/june212025", getMonarchsHandler)
