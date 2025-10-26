@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -538,46 +537,54 @@ func generateTableName(day int, monthInt int, year int) string {
 func getSingleDayScan(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	// date should be in number form mmddyyyy
+	// Get the date as a string (MMDDYYYY)
+	dateStr := vars["calendarDate"]
 
-	calendarDate, err := strconv.Atoi(vars["calendarDate"])
+	// 1. String length check (must be exactly 8 characters)
+	if len(dateStr) != 8 {
+		http.Error(w, "Invalid date given - expected 8 digits in MMDDYYYY format", http.StatusBadRequest)
+		log.Printf("Invalid date string length: %s, expected 8", dateStr)
+		return
+	}
+
+	// 2. Extract components using string slicing (MMDDYYYY)
+	monthStr := dateStr[0:2] // MM (e.g., "06")
+	dayStr := dateStr[2:4]   // DD (e.g., "30")
+	yearStr := dateStr[4:8]  // YYYY (e.g., "2025")
+
+	// 3. Convert day and year to integers for table name generation
+	dayInt, err := strconv.Atoi(dayStr)
 	if err != nil {
-		http.Error(w, "Invalid date given", http.StatusBadRequest)
+		http.Error(w, "Invalid day format in date", http.StatusBadRequest)
+		log.Printf("Invalid day format: %s", dayStr)
 		return
 	}
 
-	// CHQ: yes I had to cast both values to int64 for the modulo to work
-	hasCorrectNumDigits := (int64(calendarDate) % int64(math.Pow(10, 7))) < 10
-
-	if(!hasCorrectNumDigits) {
-		http.Error(w, "Invalid date given - incorrect number of digits", http.StatusBadRequest)
+	yearInt, err := strconv.Atoi(yearStr)
+	if err != nil {
+		http.Error(w, "Invalid year format in date", http.StatusBadRequest)
+		log.Printf("Invalid year format: %s", yearStr)
 		return
+	}
+	
+	// The `useVariable` flag is preserved from your original code
+	useVariable := false 
+
+	// Generate the dynamic table name using the string-based month
+	myChoice := generateTableName(dayInt, monthStr, yearInt)
+
+	// If useVariable is false, override with the hardcoded test table name
+	if !useVariable {
+		myChoice = "june212025"
+		log.Printf("Using hardcoded table name: %s", myChoice)
 	} else {
-		// peel off the first leading two digits to assign to monthInt
-		monthInt := int64(int64(calendarDate) / int64(math.Pow(10, 6)))
-
-		// this takes an mmddyyyy represented number and removes the leading mm
-		// to produce ddyyyy
-		dayYearPortion := int64(calendarDate) - (monthInt * int64(math.Pow(10, 6)))
-
-		// peel off the next leading two digits to assign to dayInt
-		dayInt := int64(int64(dayYearPortion) / int64(math.Pow(10, 4)))
-
-		// the remaining 4 digits are the year
-		yearInt := int64(int64(dayYearPortion) % int64(math.Pow(10, 4)))
-
-		
-		useVariable := false
-
-		myChoice := generateTableName(int(dayInt), int(monthInt), int(yearInt))
-		
-		if (!useVariable){
-			myChoice = "june212025"
-		}  
-		getMonarchButterfliesSingleDayAsAdmin(myChoice, w, nil)
-		// getMonarchButterfliesSingleDayAsAdmin(calendarDate, w, r)
+		log.Printf("Using generated table name: %s", myChoice)
 	}
+
+	// Call the function to fetch data from the determined table
+	getMonarchButterfliesSingleDayAsAdmin(myChoice, w, nil)
 }
+
 
 
 // createDailyViewHandler processes the POST request to create the view
