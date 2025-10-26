@@ -327,18 +327,40 @@ func getAllMonarchsAsAdmin2(w http.ResponseWriter, _ *http.Request) {
 // func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseWriter, r *http.Request) {
 
 func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseWriter, _ *http.Request) {
+	// 1. Establish DB Connection
+	connStr := os.Getenv("DIG_OCEAN_DROPLET_DOCKER_PSQL")
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Printf("Failed to connect to database: %v", err) // Log 1: Connection failure
+		http.Error(w, fmt.Sprintf("Failed to connect to database: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// 2. Ping DB
+	err = db.Ping()
+	if err != nil {
+		log.Printf("Database ping failed: %v", err) // Log 2: Ping failure
+		http.Error(w, fmt.Sprintf("Database ping failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+	
 	var monarchButterflies []MyMonarchRecord
 	tableName := theTablename
+	
 	// Explicitly listing all 35 columns to match the struct fields.
 	query := fmt.Sprintf(`SELECT "gbifID", "datasetKey", "publishingOrgKey", "eventDate", "eventDateParsed", "year", "month", "day", "day_of_week", "week_of_year", "date_only", "scientificName", "vernacularName", "taxonKey", "kingdom", "phylum", "class", "order", "family", "genus", "species", "decimalLatitude", "decimalLongitude", "coordinateUncertaintyInMeters", "countryCode", "stateProvince", "individualCount", "basisOfRecord", "recordedBy", "occurrenceID", "collectionCode", "catalogNumber", "county", "cityOrTown", "time_only" FROM "%s" ORDER BY "date_only"`, tableName)
+	
+	// 3. Execute Query
 	rows, err := db.Query(query)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error retrieving butterflies: %v", err), http.StatusInternalServerError)
-		log.Printf("Query failed: %v", err)
+		log.Printf("Query failed for table %s: %v", tableName, err) // Log 3: Query failure
 		return
 	}
 	defer rows.Close()
 
+	// 4. Iterate and Scan Rows
 	for rows.Next() {
 		var record MyMonarchRecord
 		err := rows.Scan(
@@ -380,15 +402,16 @@ func getMonarchButterfliesSingleDayAsAdmin(theTablename string, w http.ResponseW
 		)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to scan row: %v", err), http.StatusInternalServerError)
-			log.Printf("Failed to scan row: %v", err)
+			log.Printf("Failed to scan row from table %s: %v", tableName, err) // Log 4: Scan failure
 			return
 		}
 		monarchButterflies = append(monarchButterflies, record)
 	}
 
+	// 5. Check for Row Iteration Errors
 	if err = rows.Err(); err != nil {
 		http.Error(w, fmt.Sprintf("Error iterating over monarch butterfly rows: %v", err), http.StatusInternalServerError)
-		log.Printf("Error iterating over rows: %v", err)
+		log.Printf("Error iterating over rows from table %s: %v", tableName, err) // Log 5: Row iteration error
 		return
 	}
 
