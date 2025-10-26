@@ -566,12 +566,19 @@ func getSingleDayScan(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Invalid year format: %s", yearStr)
 		return
 	}
-	
+
+	monthInt, err := strconv.Atoi(monthStr)
+	if err != nil {
+		http.Error(w, "Invalid month format in date", http.StatusBadRequest)
+		log.Printf("Invalid month format: %s", monthStr)
+		return
+	}
+
 	// The `useVariable` flag is preserved from your original code
 	useVariable := false 
 
 	// Generate the dynamic table name using the string-based month
-	myChoice := generateTableName(dayInt, monthStr, yearInt)
+	myChoice := generateTableName(dayInt, monthInt, yearInt)
 
 	// If useVariable is false, override with the hardcoded test table name
 	if !useVariable {
