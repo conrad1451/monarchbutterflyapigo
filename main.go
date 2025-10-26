@@ -595,7 +595,7 @@ func getSingleDayScan(w http.ResponseWriter, r *http.Request) {
 	myChoice := generateTableName(dayInt, monthInt, yearInt)
 
 	// If useVariable is false, override with the hardcoded test table name
-	if !useVariable {
+	if useVariable {
 		myChoice = "june212025"
 		log.Printf("Using hardcoded table name: %s", myChoice)
 	} else {
