@@ -534,11 +534,17 @@ func generateTableName(day int, monthInt int, year int) string {
 	return tableName
 }
 
+// CHQ: Gemini AI added log statements to debug
 func getSingleDayScan(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	// Get the date as a string (MMDDYYYY)
 	dateStr := vars["calendarDate"]
+
+	// **********************************************
+	// DEBUG LOGGING ADDED HERE TO SEE THE RECEIVED DATE STRING AND LENGTH
+	// **********************************************
+	log.Printf("Received calendarDate: %s (Length: %d)", dateStr, len(dateStr))
 
 	// 1. String length check (must be exactly 8 characters)
 	if len(dateStr) != 8 {
@@ -566,19 +572,20 @@ func getSingleDayScan(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Invalid year format: %s", yearStr)
 		return
 	}
-
-	monthInt, err := strconv.Atoi(monthStr)
-	if err != nil {
-		http.Error(w, "Invalid month format in date", http.StatusBadRequest)
+	
+	// Check if monthStr is a valid two-digit number
+	// Although we use monthStr in generateTableName, we need to ensure it's a number
+	if _, err := strconv.Atoi(monthStr); err != nil {
+		http.Error(w, "Invalid month format in date: not a number", http.StatusBadRequest)
 		log.Printf("Invalid month format: %s", monthStr)
 		return
 	}
-
+	
 	// The `useVariable` flag is preserved from your original code
 	useVariable := false 
 
 	// Generate the dynamic table name using the string-based month
-	myChoice := generateTableName(dayInt, monthInt, yearInt)
+	myChoice := generateTableName(dayInt, monthStr, yearInt)
 
 	// If useVariable is false, override with the hardcoded test table name
 	if !useVariable {
@@ -591,6 +598,7 @@ func getSingleDayScan(w http.ResponseWriter, r *http.Request) {
 	// Call the function to fetch data from the determined table
 	getMonarchButterfliesSingleDayAsAdmin(myChoice, w, nil)
 }
+
 
 
 
